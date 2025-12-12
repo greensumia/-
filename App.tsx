@@ -1,7 +1,7 @@
-import React, { useState, Suspense } from 'react';
-import Experience from './components/Experience';
-import Overlay from './components/Overlay';
-import { TreeMorphState } from './types';
+import React, { useState } from 'react';
+import Experience from './components/Experience.tsx';
+import Overlay from './components/Overlay.tsx';
+import { TreeMorphState } from './types.ts';
 
 // Simple Loader Component
 const Loader = () => (
@@ -26,18 +26,13 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-black">
-      {/* 3D Canvas Layer wrapped in Suspense */}
+      {/* 3D Canvas Layer */}
       <div className="absolute inset-0 z-0">
-        <Suspense fallback={<Loader />}>
-          <Experience treeState={treeState} />
-        </Suspense>
+         <Experience treeState={treeState} />
       </div>
 
       {/* UI Overlay Layer */}
       <Overlay treeState={treeState} toggleState={toggleState} />
-      
-      {/* Fallback Loader if Suspense is triggered but overlay is mounted */}
-      <Suspense fallback={null} />
     </div>
   );
 };

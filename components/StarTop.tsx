@@ -1,36 +1,30 @@
-import React, { useRef, useMemo, useLayoutEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Center } from '@react-three/drei';
 import * as THREE from 'three';
-import { getRandomSpherePoint } from '../utils/geometry';
-import { COLORS, SCATTER_RADIUS, TREE_HEIGHT } from '../types';
+import { getRandomSpherePoint } from '../utils/geometry.ts';
+import { COLORS, SCATTER_RADIUS, TREE_HEIGHT, TreeMorphState } from '../types.ts';
 
 interface StarTopProps {
-  morphFactor: number;
+  treeState: TreeMorphState;
 }
 
-const StarTop: React.FC<StarTopProps> = ({ morphFactor }) => {
+const StarTop: React.FC<StarTopProps> = ({ treeState }) => {
   const groupRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const morphProgress = useRef(0);
   
-  // Target position is at the very top of the tree
-  // Tree goes from -height/2 to height/2. 
-  // Adjusted slightly higher to account for star size so it sits nicely on top
   const treeY = (TREE_HEIGHT / 2) + 0.5;
   const targetPos = useMemo(() => new THREE.Vector3(0, treeY, 0), [treeY]);
-  
-  // Start position is random scattered
   const startPos = useMemo(() => getRandomSpherePoint(SCATTER_RADIUS), []);
-  
   const currentPos = useMemo(() => new THREE.Vector3(), []);
 
-  // Generate 5-pointed star shape
   const starShape = useMemo(() => {
     const shape = new THREE.Shape();
     const outerRadius = 1.0;
-    const innerRadius = 0.5; // Classic 5-point star ratio
+    const innerRadius = 0.5; 
     const numPoints = 5;
-    const angleOffset = Math.PI / 2; // Start at 12 o'clock (Up)
+    const angleOffset = Math.PI / 2;
 
     for (let i = 0; i < numPoints * 2; i++) {
       const radius = i % 2 === 0 ? outerRadius : innerRadius;
@@ -53,8 +47,13 @@ const StarTop: React.FC<StarTopProps> = ({ morphFactor }) => {
     bevelSegments: 3,
   }), []);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return;
+
+    const target = treeState === TreeMorphState.TREE_SHAPE ? 1 : 0;
+    const speed = 1.5;
+    morphProgress.current = THREE.MathUtils.lerp(morphProgress.current, target, speed * delta);
+    const morphFactor = morphProgress.current;
 
     const time = state.clock.getElapsedTime();
 
@@ -68,23 +67,19 @@ const StarTop: React.FC<StarTopProps> = ({ morphFactor }) => {
 
     groupRef.current.position.copy(currentPos);
 
-    // Rotation: Spin fast when scattered, slow majestic spin when formed
+    // Rotation
     const rotationSpeed = THREE.MathUtils.lerp(5, 0.8, morphFactor);
     groupRef.current.rotation.y += rotationSpeed * 0.01;
-    
-    // Add a little wobble
     groupRef.current.rotation.z = Math.sin(time) * 0.05 * morphFactor;
 
-    // Pulse emission intensity
+    // Pulse emission
     if (materialRef.current) {
-        // High intensity pulse for that cinematic glow
         materialRef.current.emissiveIntensity = 2.5 + Math.sin(time * 3) * 1.5;
     }
   });
 
   return (
     <group ref={groupRef}>
-      {/* 5-Pointed Star Mesh - Centered to ensure rotation is symmetrical */}
       <Center>
         <mesh castShadow>
           <extrudeGeometry args={[starShape, extrudeSettings]} />
@@ -99,23 +94,22 @@ const StarTop: React.FC<StarTopProps> = ({ morphFactor }) => {
         </mesh>
       </Center>
       
-      {/* Halo / Glow effect */}
+      {/* Halo */}
       <mesh scale={[2.5, 2.5, 2.5]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial 
           color={COLORS.gold} 
           transparent 
-          opacity={0.15 * morphFactor} 
+          opacity={0.15} 
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Point light for the top area */}
       <pointLight 
         color={COLORS.gold} 
-        intensity={3 * morphFactor} 
+        intensity={3} 
         distance={15} 
         decay={2} 
       />

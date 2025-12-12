@@ -1,5 +1,5 @@
 import React from 'react';
-import { TreeMorphState } from '../types';
+import { TreeMorphState } from '../types.ts';
 
 interface OverlayProps {
   treeState: TreeMorphState;
@@ -14,11 +14,11 @@ const Overlay: React.FC<OverlayProps> = ({ treeState, toggleState }) => {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="text-left">
-          <h1 className="text-4xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] tracking-tighter">
-            ARIX
+          <h1 className="text-4xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] tracking-tighter leading-tight">
+            Merry<br className="md:hidden" /> Christmas
           </h1>
           <h2 className="text-lg text-emerald-100/80 tracking-[0.2em] uppercase mt-2 border-l-2 border-yellow-500 pl-4">
-            Signature Collection
+            Season's Greetings
           </h2>
         </div>
         <div className="hidden md:block text-right text-xs text-emerald-500/50 uppercase tracking-widest font-mono">

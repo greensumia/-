@@ -3,11 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Arix Signature Christmas Tree</title>
+    <title>Merry Christmas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    
+    <!-- Babel for in-browser JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <style>
       body {
         margin: 0;
@@ -19,32 +23,70 @@
       h1, h2, button {
         font-family: 'Playfair Display', serif;
       }
-      /* Ensure root takes full height */
       #root {
         width: 100vw;
         height: 100vh;
       }
+      #error-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9);
+        color: #ff5555;
+        padding: 20px;
+        z-index: 9999;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow: auto;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react/": "https://esm.sh/react@18.2.0/",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "three": "https://esm.sh/three@0.160.0",
-    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-    "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber",
-    "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.0?external=react,react-dom,three,@react-three/fiber",
-    "postprocessing": "https://esm.sh/postprocessing@6.34.1?external=three",
-    "maath": "https://esm.sh/maath@0.10.7?external=three",
-    "uuid": "https://esm.sh/uuid@9.0.1"
-  }
-}
-</script>
+    <!-- Error Handler -->
+    <script>
+      window.addEventListener('error', function(event) {
+        const overlay = document.getElementById('error-overlay');
+        if (overlay) {
+          overlay.style.display = 'block';
+          overlay.innerText += `Error: ${event.message}\nAt: ${event.filename}:${event.lineno}\n\n`;
+        }
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        const overlay = document.getElementById('error-overlay');
+        if (overlay) {
+          overlay.style.display = 'block';
+          overlay.innerText += `Promise Rejection: ${event.reason}\n\n`;
+        }
+      });
+    </script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react/": "https://esm.sh/react@18.2.0/",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "three": "https://esm.sh/three@0.160.0",
+        "three-stdlib": "https://esm.sh/three-stdlib@2.29.4?external=three",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber,zustand,leva",
+        "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.0?external=react,react-dom,three,@react-three/fiber",
+        "postprocessing": "https://esm.sh/postprocessing@6.34.1?external=three",
+        "maath": "https://esm.sh/maath@0.10.7?external=three",
+        "uuid": "https://esm.sh/uuid@9.0.1",
+        "zustand": "https://esm.sh/zustand@4.5.0",
+        "zustand/middleware": "https://esm.sh/zustand@4.5.0/middleware",
+        "zustand/vanilla": "https://esm.sh/zustand@4.5.0/vanilla",
+        "zustand/shallow": "https://esm.sh/zustand@4.5.0/shallow",
+        "leva": "https://esm.sh/leva@0.9.35"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>
-  </body>
+    <div id="error-overlay"></div>
+    <!-- Main Entry Point: type="text/babel" is crucial for in-browser compilation -->
+    <script type="text/babel" data-type="module" src="./index.tsx"></script>
+</body>
 </html>

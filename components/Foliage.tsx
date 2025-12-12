@@ -1,8 +1,8 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { generateFoliageData } from '../utils/geometry';
-import { COLORS } from '../types';
+import { generateFoliageData } from '../utils/geometry.ts';
+import { COLORS, TreeMorphState } from '../types.ts';
 
 const particleVertexShader = `
   uniform float uTime;
@@ -18,26 +18,25 @@ const particleVertexShader = `
   void main() {
     vRandom = aRandom;
 
-    // Morph logic: Linear interpolation between position (scatter) and aTargetPosition (tree)
+    // Morph logic
     vec3 currentPos = mix(position, aTargetPosition, uMorphFactor);
 
-    // Add "Breathing" / Wind effect based on time
-    // More intense when formed (uMorphFactor near 1)
+    // Breathing / Wind
     float wind = sin(uTime * 2.0 + currentPos.y * 0.5) * 0.1 * uMorphFactor;
     currentPos.x += wind;
     currentPos.z += wind * 0.5;
     
-    // Float effect when scattered
+    // Float effect
     float floatEffect = sin(uTime + aRandom * 10.0) * 0.5 * (1.0 - uMorphFactor);
     currentPos.y += floatEffect;
 
     vec4 mvPosition = modelViewMatrix * vec4(currentPos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
-    // Size attenuation - Increased base size for fuller/fatter look
-    gl_PointSize = (6.0 + aRandom * 5.0) * uPixelRatio * (15.0 / -mvPosition.z);
+    // Size attenuation with safety check for z
+    float zDist = max(1.0, -mvPosition.z); 
+    gl_PointSize = (6.0 + aRandom * 5.0) * uPixelRatio * (15.0 / zDist);
     
-    // Alpha fade based on distance/glint
     vAlpha = 0.7 + 0.3 * sin(uTime * 3.0 + aRandom * 100.0);
   }
 `;
@@ -50,19 +49,13 @@ const particleFragmentShader = `
   varying float vRandom;
 
   void main() {
-    // Circular particle
     float r = distance(gl_PointCoord, vec2(0.5));
     if (r > 0.5) discard;
 
-    // Soft edge
     float glow = 1.0 - (r * 2.0);
     glow = pow(glow, 1.5);
 
-    // Mix emerald green with gold sparkles based on random attribute
-    // slightly reduced gold threshold to ensure green dominance
     vec3 finalColor = mix(uColor, uGoldColor, step(0.92, vRandom));
-    
-    // Extra brightness for center
     finalColor += vec3(0.15) * glow;
 
     gl_FragColor = vec4(finalColor, vAlpha * glow);
@@ -70,58 +63,43 @@ const particleFragmentShader = `
 `;
 
 interface FoliageProps {
-  morphFactor: number;
+  treeState: TreeMorphState;
 }
 
-const Foliage: React.FC<FoliageProps> = ({ morphFactor }) => {
+const Foliage: React.FC<FoliageProps> = ({ treeState }) => {
   const count = 12000;
   const meshRef = useRef<THREE.Points>(null);
+  const morphProgress = useRef(0);
   
-  // Generate data once
   const { positions, targetPositions, randoms } = useMemo(() => generateFoliageData(count), []);
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uMorphFactor: { value: 0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+    uPixelRatio: { value: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2) },
     uColor: { value: new THREE.Color(COLORS.emerald) },
     uGoldColor: { value: new THREE.Color(COLORS.gold) },
   }), []);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
+    // Internal animation loop - no React re-renders!
+    const target = treeState === TreeMorphState.TREE_SHAPE ? 1 : 0;
+    const speed = 1.5;
+    morphProgress.current = THREE.MathUtils.lerp(morphProgress.current, target, speed * delta);
+
     if (meshRef.current) {
-      // Update Uniforms
       const material = meshRef.current.material as THREE.ShaderMaterial;
       material.uniforms.uTime.value = state.clock.getElapsedTime();
-      
-      // Smoothly interpolate the morph factor visually if needed, 
-      // but here we trust the parent passes a smooth value or we animate it here.
-      // We will assign the prop directly to uniform for responsiveness.
-      material.uniforms.uMorphFactor.value = morphFactor;
+      material.uniforms.uMorphFactor.value = morphProgress.current;
     }
   });
 
   return (
     <points ref={meshRef}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-aTargetPosition"
-          count={count}
-          array={targetPositions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-aRandom"
-          count={count}
-          array={randoms}
-          itemSize={1}
-        />
+        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-aTargetPosition" count={count} array={targetPositions} itemSize={3} />
+        <bufferAttribute attach="attributes-aRandom" count={count} array={randoms} itemSize={1} />
       </bufferGeometry>
       <shaderMaterial
         vertexShader={particleVertexShader}

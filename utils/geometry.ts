@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SCATTER_RADIUS, TREE_HEIGHT, TREE_RADIUS_BASE } from '../types';
+import { SCATTER_RADIUS, TREE_HEIGHT, TREE_RADIUS_BASE } from '../types.ts';
 
 // Helper to generate a random point inside a sphere
 export const getRandomSpherePoint = (radius: number): THREE.Vector3 => {
